@@ -1,14 +1,24 @@
 package com.github.grishberg.performance
 
 import com.android.ddmlib.AndroidDebugBridge
+import com.github.grishberg.performance.command.LauncherCommand
+import com.github.grishberg.tests.ConnectedDeviceWrapper
 import com.github.grishberg.tests.InstrumentalExtension
 import com.github.grishberg.tests.adb.AdbWrapper
 import com.github.grishberg.tests.adb.AdbWrapperImpl
+import com.github.grishberg.tests.common.RunnerLogger
+import java.util.concurrent.CountDownLatch
 
 private const val TAG = "PerformanceLauncher"
 
-class PerformanceLauncher {
-    private val logger = Log4JLogger()
+/**
+ * Launches pref test on available devices.
+ */
+class PerformanceLauncher(
+        private val resultsPrinter: ResultsPrinter,
+        private val logger: RunnerLogger
+) {
+
     private val adb = initAdbConnection(logger)
 
     /**
@@ -20,18 +30,44 @@ class PerformanceLauncher {
             firstSourceCode: String,
             secondSourceJava: Boolean,
             secondSourceImport: String,
-            secondSourceCode: String): String {
-
-        val resultsPrinter: ResultsPrinter = ConsoleResultPrinter()
+            secondSourceCode: String) {
 
         val commandsFabric = CommandsFabric(adb, logger, resultsPrinter,
                 firstSourceJava, firstSourceImport, firstSourceCode,
                 secondSourceJava, secondSourceImport, secondSourceCode)
-        commandsFabric.execute()
-        return resultsPrinter.results()
+
+        launchPerformance(commandsFabric)
     }
 
-    private fun initAdbConnection(logger: Log4JLogger): AdbWrapper {
+    private fun launchPerformance(commandsFabric: CommandsFabric) {
+        val deviceList = adb.provideDevices()
+
+        val replaceCommentCommand = commandsFabric.buildReplaceCommentCommand()
+        replaceCommentCommand.execute()
+
+        val deviceCounter = CountDownLatch(deviceList.size)
+        deviceList.forEach { device ->
+            Thread {
+                try {
+                    executeCommands(device, commandsFabric.provideCommands())
+                } catch (e: Exception) {
+                    logger.e(TAG, "Execute command exception:", e)
+                } finally {
+                    deviceCounter.countDown()
+                }
+            }.start()
+        }
+        deviceCounter.await()
+        logger.i(TAG, "Done")
+    }
+
+    private fun executeCommands(firstDevice: ConnectedDeviceWrapper, provideCommands: List<LauncherCommand>) {
+        provideCommands.forEach {
+            it.execute(firstDevice)
+        }
+    }
+
+    private fun initAdbConnection(logger: RunnerLogger): AdbWrapper {
         val adb = AdbWrapperImpl()
         val instrumentalExtension = InstrumentalExtension()
         var androidSdkPath: String? = instrumentalExtension.androidSdkPath

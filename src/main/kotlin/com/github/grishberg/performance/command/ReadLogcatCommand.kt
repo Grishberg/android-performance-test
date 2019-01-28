@@ -16,11 +16,16 @@ class ReadLogcatCommand(
     override fun execute(device: ConnectedDeviceWrapper) {
         val logcatOutput = device.executeShellCommandAndReturnOutput(READ_LOGCAT_COMMAND)
         val regex = "\\[PERF\\]\\s+\\:\\s\\(d1=(\\d+), d2=(\\d+)\\)".toRegex()
-        val results = regex.find(logcatOutput)
-        val duration1 = results!!.groupValues[1].toLong()
-        val duration2 = results!!.groupValues[2].toLong()
-
-        resultsPrinter.populateResult(device, duration1, duration2)
+        for (i in 0 until 10) {
+            val results = regex.find(logcatOutput)
+            if (results != null) {
+                val duration1 = results.groupValues[1].toLong()
+                val duration2 = results.groupValues[2].toLong()
+                resultsPrinter.populateResult(device, duration1, duration2)
+                break
+            }
+            Thread.sleep(500)
+        }
         device.executeShellCommand(CLEAR_LOGCAT_COMMAND)
     }
 }

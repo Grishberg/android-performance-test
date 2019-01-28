@@ -5,7 +5,7 @@ import java.nio.file.Paths
 private const val SRC_DIR = "in"
 
 class FileSourcePerformanceLauncher(
-        private val perfLauncher: PerformanceLauncher
+        private val performanceLauncher: PerformanceLauncher
 ) {
     /**
      * reads sources from "in" folder and start performance test.
@@ -16,7 +16,7 @@ class FileSourcePerformanceLauncher(
         val src1 = readSourceFile("source1.kt")
         val src2 = readSourceFile("source2.kt")
 
-        perfLauncher.measurePerformance(false, import1, src1,
+        performanceLauncher.measurePerformance(false, import1, src1,
                 false, import2, src2)
     }
 

@@ -19,23 +19,7 @@ class CommandsFabric(
 ) {
     private val sourceFiles = SourceFiles(SourceFileSystem())
 
-
-    fun execute() {
-        val deviceList = adb.provideDevices()
-
-        val replaceCommentCommand = buildReplaceCommentCommand()
-        replaceCommentCommand.execute()
-
-        val firstDevice = deviceList[0]
-        val commands = provideCommands()
-
-        commands.forEach {
-            it.execute(firstDevice)
-        }
-        logger.i(TAG, "Done")
-    }
-
-    private fun provideCommands(): List<LauncherCommand> {
+    fun provideCommands(): List<LauncherCommand> {
         val commands = ArrayList<LauncherCommand>()
         commands.add(AssembleCommand(logger))
         commands.add(InstallApkCommand(logger))
@@ -54,7 +38,7 @@ class CommandsFabric(
         } else "k vs k"
     }
 
-    private fun buildReplaceCommentCommand(): ReplaceCommentCommand {
+    fun buildReplaceCommentCommand(): ReplaceCommentCommand {
         val sourceCode1 = if (firstSourceJava)
             JavaSource(true, firstSourceImport, firstSourceCode)
         else
