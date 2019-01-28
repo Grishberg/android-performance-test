@@ -5,6 +5,12 @@ plugins {
 group 'com.github.grishberg'
 version '0.1.0'
 
+ext {
+    PUBLISH_GROUP_ID = group
+    PUBLISH_ARTIFACT_ID = 'android-performance'
+    PUBLISH_VERSION = version
+}
+
 repositories {
     jcenter()
     mavenCentral()
@@ -28,4 +34,17 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+// need to call  ./gradlew clean build generateRelease
+apply from: 'publish.gradle'
+
+apply plugin: 'maven-publish'
+// ./gradlew publishToMavenLocal
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
 }
